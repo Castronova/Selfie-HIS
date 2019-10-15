@@ -1,0 +1,161 @@
+<!doctype html>
+
+
+{% extends "base.html" %}
+
+{% block extrahead %}
+<link rel="stylesheet" type="text/css" href="/static/provider.css">
+<link rel="stylesheet" type="text/css" href="/static/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+   integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+   crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+   integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+   crossorigin=""></script>
+<script src="/static/provider.js" defer></script>
+
+{% endblock %}
+
+
+{% block jsonld %}
+  {% if 'jsonld' in data %}
+  <script type="application/ld+json"> 
+      {{ data['jsonld']|safe}}
+  </script>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="mdl-grid">
+    <div class="mdl-cell mdl-cell--12-col">
+	<h3 class='title'>{{ data['title'] }}</h3>
+    </div>
+    <div class="mdl-cell
+	        mdl-cell--5-col">
+
+	<div class="mdl-grid">
+	    <div class="mdl-cell
+		        mdl-cell--12-col">
+		<div id=overview>
+		    <div class="card-wide mdl-card mdl-shadow--2dp">
+			<div class="mdl-card__title">
+			    <h2 class="mdl-card__title-text">Provider Description</h2>
+			</div>
+			<div class="mdl-card__supporting-text">
+			    <div id=serviceid>
+				Service ID: {{ data['ServiceID'] }}
+			    </div>
+			    <div id=network>
+				Network Name: {{ data['NetworkName'] }}
+			    </div>
+			    <div id=organization>
+				Organization: {{ data['organization'] }}
+			    </div>
+			    <div id=contact>
+				Contact: {{ data['Email'] }}
+			    </div>
+			    <div id=homepage>
+				Organization Homepage: <a target="_blank" href={{ data['orgwebsite'] }}> {{ data['orgwebsite'] }}</a>
+			    </div>
+			    <div id=wsdl>
+				SOAP WSDL: <a target="_blank" href={{ data['servURL'] }}> {{ data['servURL'] }} </a>
+			    </div>
+			    </br>
+			    <div id=citation>
+				Citation: {{ data['citation'] }}
+			    </div>
+			</div>
+		    </div>
+		</div>
+	    </div>
+	    
+	    <div class="mdl-cell
+			mdl-cell--12-col">
+		<div id=statistics>
+		    <div class="card-wide mdl-card mdl-shadow--2dp">
+			<div class="mdl-card__title">
+			    <h2 class="mdl-card__title-text">Statistics</h2>
+			</div>
+			<div class="mdl-card__supporting-text">
+			    Site Count: {{ data['sitecount'] }}
+			    </br>
+			    Variable Count: {{ data['variablecount'] }}
+			    </br>
+			    Value Count: {{ data['valuecount'] }}
+			    </br>
+			    <div id=bbox>
+				Geographic Extent: {{ data['maxy'] }} 
+				{{ data['maxx'] }}
+				{{ data['miny'] }}
+				{{ data['minx'] }}
+			    </div>
+			</div>
+		    </div>
+		</div>
+	    </div>
+
+
+	    <div class="mdl-cell
+			mdl-cell--12-col">
+		<div id=abstract>
+		    <div class="card-wide mdl-card mdl-shadow--2dp">
+			<div class="mdl-card__title">
+			    <h2 class="mdl-card__title-text">Abstract</h2>
+			</div>
+			<div class="mdl-card__supporting-text">
+			    {{ data['abstract'] }}
+			</div>
+		    </div>
+		</div>
+	    </div>
+
+	   <div class="mdl-cell
+		       mdl-cell--12-col">
+	       <div id=jsonld>
+		   <div class="card-wide mdl-card mdl-shadow--2dp">
+		       <div class="mdl-card__title">
+			   <h2 class="mdl-card__title-text">JSON-LD</h2>
+		       </div>
+		       <div class="mdl-card__supporting-text">
+			   <pre>
+{{ data['jsonld']|safe}}
+			   </pre>
+		       </div>
+		   </div>
+	       </div>
+	   </div>
+
+	</div>
+    </div>
+
+   <div class="mdl-cell
+	        mdl-cell--5-col">
+
+       <div class="mdl-grid">
+	   <div class="mdl-cell
+		       mdl-cell--12-col">
+	       <div id=map>
+		   <div class="card-wide mdl-card mdl-shadow--2dp">
+		       <div class="mdl-card__supporting-text">
+			   <div id="map-preview"></div>
+		       </div>
+		   </div>
+	       </div>
+	   </div>
+	   
+       </div>
+   </div>
+
+
+
+
+
+
+
+</div>
+
+    
+
+
+{% endblock %}

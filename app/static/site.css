@@ -1,0 +1,6 @@
+
+#map-preview { height: 500px; }
+
+#lat, #lon {
+    display:inline;
+}
