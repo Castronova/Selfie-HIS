@@ -4,6 +4,7 @@ import json
 import numpy
 from flask import abort
 from flask import render_template
+from flask import request, Response
 
 from libs import pyhis
 from contexts import elf
@@ -96,5 +97,13 @@ def site(network, siteid):
     json_ld['@type'].append('http://www.opengeospatial.org/standards/waterml2/hy_features/HY_HydroLocation')
     dat['jsonld'] = json.dumps(json_ld, sort_keys=True,
                                indent=4, separators=(',', ': '))
-    return render_template("site.html", data=dat)
+
+    arg = request.args.get('jsonld')
+    if arg is None:
+        return render_template("site.html", data=dat)
+    else:
+        return Response(dat['jsonld'],
+                        mimetype='application/json')
+
+
 

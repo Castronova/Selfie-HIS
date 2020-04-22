@@ -103,7 +103,9 @@ class Services(object):
                                   networkIDs=sid)
                     parameters.append(params)
 
+        import pdb; pdb.set_trace()
         print(f'number of param sets: {len(parameters)}')
+        funcs.get_sites(self.wsdl, parameters[0])
 
         # run get sites in parallel
         pool = Pool(cpu_count())

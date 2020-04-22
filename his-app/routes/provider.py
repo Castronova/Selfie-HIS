@@ -3,7 +3,9 @@
 import json
 import numpy
 from flask import abort
+from flask import request
 from flask import render_template
+from flask import Response
 
 from libs import pyhis
 from contexts import elf
@@ -31,7 +33,7 @@ def provider(network):
     except Exception:
         abort(404)
 
-    # get info for the provider via WOF
+    # get info for the provider via wof
     provider = providers.iloc[idx]
 
     # convert pandas df to dict.
@@ -42,6 +44,15 @@ def provider(network):
         if type(v) == numpy.int64:
             v = int(v)
         pdata[k] = v
+
+#    import pdb; pdb.set_trace()
+#    # get sites for this service
+#    sites = services.get_sites(xmin=pdata['minx'],
+#                               ymin=pdata['miny'],
+#                               xmax=pdata['minx'] + 10,
+#                               ymax=pdata['miny'] + 10,
+# THIS DOESNT SEEM CORRECT      networkIDs=str(pdata['ServiceID']),
+#                               degStep=3)
 
     pdata['title'] = f"{pdata['NetworkName']} " \
                      f"- {pdata['organization']}"
@@ -90,4 +101,12 @@ def provider(network):
 
     pdata['jsonld'] = json.dumps(json_ld, sort_keys=True,
                                  indent=4, separators=(',', ': '))
-    return render_template("provider.html", data=pdata)
+
+    # return either the page or ld+json
+    arg = request.args.get('jsonld')
+    if arg is None:
+        return render_template("provider.html", data=pdata)
+    else:
+        return Response(response=pdata['jsonld'],
+                        mimetype="application/json")
+
