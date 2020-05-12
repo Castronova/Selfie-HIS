@@ -10,33 +10,26 @@
 
 {% block content %}
 
-<div class="mdl-grid">
+<div class="mdl-grid center-items">
     <div class="mdl-cell
-		mdl-cell--8-col
-		mdl-cell--1-offset">
+		mdl-cell--8-col">
 	<h3 class='title'>HIS - SELFIE Sample Site</h3>
     </div>
 
-    <div class="mdl-cell
-	        mdl-cell--8-col
-		mdl-cell--2-offset">
-	For a complete list of HIS providers, see <a target='_blank' href='https://hiscentral.cuahsi.org/pub_services.aspx'>HIS Central</a>
-    </div>
 
     <div class="mdl-cell
-	        mdl-cell--8-col
-		mdl-cell--2-offset">
+	        mdl-cell--8-col">
 	<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
 	    <thead>
 		<tr>
 		    <th>Name</th>
-		    <th>URL</th>
+		    <th>Site Count</th>
 		</tr>
 	    </thead>
 	    {% for dict in data %}
 	    <tr>
-		<td>{{ dict['name'] }}</td>
-		<td><a target='_blank' href={{ dict['url'] }}>{{ dict['url'] }}</a></td>
+		<td><a target='_blank' href={{ dict['url'] }}>{{ dict['name'] }}</a></td>
+		<td>{{ dict['sitecount'] }}</td>
 	    </tr>
 	    {% endfor %}
 	</table>

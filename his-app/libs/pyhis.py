@@ -103,7 +103,6 @@ class Services(object):
                                   networkIDs=sid)
                     parameters.append(params)
 
-        import pdb; pdb.set_trace()
         print(f'number of param sets: {len(parameters)}')
         funcs.get_sites(self.wsdl, parameters[0])
 
@@ -190,3 +189,35 @@ class Utilities(object):
         # return dictionary of x and y coordinates
         return dict(xcoords=x_coords,
                     ycoords=y_coords)
+
+
+class Provider(object):
+    def __init__(self, provider):
+        self.provider = provider
+
+        # convert pandas df to dict.
+        # this is necessary because the to_dict function returns 64bit numpy
+        # data types which are not json serializable :(
+        self.pdata = {}
+        for k, v in self.provider.to_dict().items():
+            if type(v) == numpy.int64:
+                v = int(v)
+            self.pdata[k] = v
+
+    def get_sites(self):
+
+        res = []
+        try:
+            client = Client(self.provider.servURL)
+            import pdb; pdb.set_trace()
+            result = client.service.GetSitesObject()
+            if str(type(result)) == "<class 'suds.sudsobject.ArrayOfSite'>":
+                res = [dict(r) for r in result[0]]
+        except Exception as e:
+            print(f'exception: {e}')
+
+        dat = []
+        for r in res:
+            for site in r:
+                dat.append(dict(site))
+        return pandas.DataFrame(dat)

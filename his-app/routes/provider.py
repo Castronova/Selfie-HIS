@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import ulmo
 import numpy
 from flask import abort
 from flask import request
@@ -8,6 +9,7 @@ from flask import render_template
 from flask import Response
 
 from libs import pyhis
+from libs import hyfeatures
 from contexts import elf
 from . import routes
 
@@ -17,6 +19,14 @@ def convert(o):
         return int(o)
     raise TypeError
 
+def mergeDict(dict1, dict2):
+   ''' Merge dictionaries and keep values of common keys in list'''
+   dict3 = {**dict1, **dict2}
+   for key, value in dict3.items():
+       if key in dict1 and key in dict2:
+               dict3[key] = [value , dict1[key]]
+ 
+   return dict3
 
 @routes.route('/<string:network>')
 def provider(network):
@@ -46,13 +56,8 @@ def provider(network):
         pdata[k] = v
 
 #    import pdb; pdb.set_trace()
-#    # get sites for this service
-#    sites = services.get_sites(xmin=pdata['minx'],
-#                               ymin=pdata['miny'],
-#                               xmax=pdata['minx'] + 10,
-#                               ymax=pdata['miny'] + 10,
-# THIS DOESNT SEEM CORRECT      networkIDs=str(pdata['ServiceID']),
-#                               degStep=3)
+    # get sites for this service
+    sites = ulmo.cuahsi.wof.get_sites(pdata['servURL'])
 
     pdata['title'] = f"{pdata['NetworkName']} " \
                      f"- {pdata['organization']}"
@@ -64,8 +69,7 @@ def provider(network):
                 "@type": []
               }
     elf = {
-            '@context': 'https://opengeospatial.github.io/ELFIE/json-ld/' +
-                        'elf.jsonld',
+            '@context': ['https://opengeospatial.github.io/ELFIE/json-ld/elf.jsonld'],
             'name': f"{pdata['organization']} " +
                     f"({pdata['NetworkName']})",
             'description': f'HIS Data Provider - {pdata["NetworkName"]}',
@@ -79,27 +83,36 @@ def provider(network):
                                 f'({pdata["maxy"]},{pdata["maxx"]}) ' +
                                 f'({pdata["miny"]},{pdata["maxx"]}) ' +
                                 f'({pdata["miny"]},{pdata["minx"]}))'},
-          }
 
-#    elf_geo = {
-#              "@type": "schema.GeoCoordinates",
-#              "schema.latitude": dat['meta']['lat'],
-#              "schema.longitude": dat['meta']['lon']
-#              }
-#    elf_hasGeometry = {
-#                      "@type": "gsp:Geometry",
-#                      "gsp:asWKT": f"POINT ({dat['meta']['lon']}, " +
-#                                   f"{dat['meta']['lat']})"
-#                     }
+          }
+    # build hydrometricNetwork
+    # todo: loop
+    hyf = hyfeatures.HydrometricNetwork()
+                                        
+    for k, v in sites.items():
+        """
+        {'code': 'AMES',
+ 'location': {'latitude': '42.066667', 'longitude': '-71.1'},
+ 'name': '117 CANTON STREET, EASTON, AMES POND',
+ 'network': 'TRWA',
+ 'site_property': {'state': 'MA'}}
+        """
+
+        # todo set description
+        lat = v['location']['latitude']
+        lon = v['location']['longitude']
+        hyf.add_feature(v['name'],
+                        f'{request.url}/{v["code"]}',
+                        geo={"@type": "schema:GeoShape",
+                             "point": f"{lat} {lon}"},
+                        gsp={"@type": "gsp:Geometry",
+                             "gsp:asWKT": f"POINT ( {lat} {lon} )"})
 
     json_ld.update(elf)
+    json_ld['@context'].extend(hyf.get_context())
+    json_ld.update(hyf.as_dict())
 
-#    # define the hy_features
-#    json_ld['@context'].append('https://opengeospatial.github.io/ELFIE/json-ld/hyf.jsonld')
-#    json_ld['HY_HydroLocationType'] = 'hydrometricStation'
-#    json_ld['@type'].append('http://www.opengeospatial.org/standards/waterml2/hy_features/HY_HydroLocation')
-
-    pdata['jsonld'] = json.dumps(json_ld, sort_keys=True,
+    pdata['jsonld'] = json.dumps(json_ld, sort_keys=False,
                                  indent=4, separators=(',', ': '))
 
     # return either the page or ld+json

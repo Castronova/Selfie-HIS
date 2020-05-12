@@ -35,3 +35,6 @@ pre {
 .mdl-data-table th {
     text-align: center;
   }
+.mdl-grid.center-items {
+  justify-content: center;
+}
