@@ -2,6 +2,7 @@
 
 from flask import render_template, request
 
+import urllib
 from libs import pyhis
 from . import routes
 
@@ -13,8 +14,9 @@ def index():
     dp = his.get_data_providers()
     dat = []
     for idx, p in dp.iterrows():
+        print(f'{p.NetworkName}')
         dat.append(dict(name=p.Title,
-                        url=f'{request.url}{p.NetworkName}',
+                        url=f'"{request.url}{p.NetworkName}"',
                         sitecount=f'{p.sitecount}',
                         orgsite=f'{p.orgwebsite}'))
 

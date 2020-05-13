@@ -57,6 +57,7 @@ def provider(network):
 
 #    import pdb; pdb.set_trace()
     # get sites for this service
+    import pdb; pdb.set_trace()
     sites = ulmo.cuahsi.wof.get_sites(pdata['servURL'])
 
     pdata['title'] = f"{pdata['NetworkName']} " \
