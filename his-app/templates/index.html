@@ -28,7 +28,7 @@
 	    </thead>
 	    {% for dict in data %}
 	    <tr>
-		<td><a target='_blank' href={{ dict['url'] }}>{{ dict['name'] }}</a></td>
+		<td><a target='_blank' href={{ dict['url'] | safe }}>{{ dict['name'] }}</a></td>
 		<td>{{ dict['sitecount'] }}</td>
 	    </tr>
 	    {% endfor %}
