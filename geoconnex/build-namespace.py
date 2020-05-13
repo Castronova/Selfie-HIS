@@ -2,6 +2,7 @@
 
 import sys
 import csv
+import ulmo
 import pyhis
 import argparse
 
@@ -29,6 +30,9 @@ if __name__ == '__main__':
     p.add_argument('-p',
                    required=True,
                    help='HIS provider ID')
+    p.add_argument('--creator',
+                   default='acastronova@cuahsi.org',
+                   help='PID creator email')
     p.add_argument('-bbox',
                    nargs='+',
                    type=str,
@@ -52,23 +56,53 @@ if __name__ == '__main__':
     # get WDSL
     wsdl = provider['servURL']
 
-    # for some reason the uppercase WSDL doesn't work
-    wsdl = wsdl.replace('WSDL', 'wsdl')
-    network_name = provider['NetworkName']
-    network_id = str(provider['ServiceID'])
+    # get provider sites
+    print('collecting sites', flush=True)
+    sites = ulmo.cuahsi.wof.get_sites(wsdl)
 
-    print('getting sites', flush=True)
-    kwargs = {'conceptKeyword': args.keyword,
-              }
-    sites = services.get_sites(float(args.bbox[0]),
-                               float(args.bbox[1]),
-                               float(args.bbox[2]),
-                               float(args.bbox[3]),
-                               pattern=network_name,
-                               **kwargs)
-    import pdb; pdb.set_trace()
+#    # for some reason the uppercase WSDL doesn't work
+#    wsdl = wsdl.replace('WSDL', 'wsdl')
+#    network_name = provider['NetworkName']
+#    network_id = str(provider['ServiceID'])
+#
+#    print('getting sites', flush=True)
+#    kwargs = {'conceptKeyword': args.keyword,
+#              }
+#    sites = services.get_sites(float(args.bbox[0]),
+#                               float(args.bbox[1]),
+#                               float(args.bbox[2]),
+#                               float(args.bbox[3]),
+#                               pattern=network_name,
+#                               **kwargs)
 
-    # TODO: Write geojson
+    # TODO: Write namespace
+
+    # append to existing namespace if one already exists
+    header = 'id,target,creator,description,lat,lon,' + \
+             'c1_type,c1_match,c1_value' + \
+             'c2_type,c2_match,c2_value' + \
+             'c3_type,c3_match,c3_value\n'
+    with open(f'CUAHSI_HIS_{args.p}_ids.csv', 'w') as f:
+        f.write(header)
+        for siteid, meta in sites.items():
+            code = meta['code']
+            net = meta['network']
+            lat = meta['location']['latitude']
+            lon = meta['location']['longitude']
+            des = meta['name']
+            url = f'http://selfie.cuahsi.org/{net}/{code}'
+            f.write(f'https://geoconnex.us/cuahsi/his/{net}/{code},')
+            f.write(f'{url},')
+            f.write(f'{args.creator},')
+            f.write(f'{des},')
+            f.write(f'{lat},')
+            f.write(f'{lon},')
+            f.write(f'Extension,')
+            f.write(f'^.html$,')
+            f.write(f'{url},')
+            f.write(f'Extension,')
+            f.write(f'^.json$,')
+            f.write(f'{url}?jsonld\n')
 
 #    try:
 #        # get site info
