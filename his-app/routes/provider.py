@@ -3,6 +3,7 @@
 import json
 import ulmo
 import numpy
+import urllib
 from flask import abort
 from flask import request
 from flask import render_template
@@ -10,6 +11,9 @@ from flask import Response
 
 from libs import pyhis
 from libs import hyfeatures
+from libs import provider
+from libs import site
+
 from contexts import elf
 from . import routes
 
@@ -19,54 +23,19 @@ def convert(o):
         return int(o)
     raise TypeError
 
-def mergeDict(dict1, dict2):
-   ''' Merge dictionaries and keep values of common keys in list'''
-   dict3 = {**dict1, **dict2}
-   for key, value in dict3.items():
-       if key in dict1 and key in dict2:
-               dict3[key] = [value , dict1[key]]
- 
-   return dict3
 
-@routes.route('/<string:network>')
-def provider(network):
 
-    services = pyhis.Services()
-    providers = services.get_data_providers()
-
-    # check that the network exists
-    known_networks = providers.NetworkName.values
-    known_networks = [net.upper() for net in known_networks]
-
-    try:
-        idx = known_networks.index(network.upper())
-    except Exception:
-        abort(404)
-
-    # get info for the provider via wof
-    provider = providers.iloc[idx]
-
-    # convert pandas df to dict.
-    # this is necessary because the to_dict function returns 64bit numpy
-    # data types which are not json serializable :(
-    pdata = {}
-    for k, v in provider.to_dict().items():
-        if type(v) == numpy.int64:
-            v = int(v)
-        pdata[k] = v
-
-#    import pdb; pdb.set_trace()
-    # get sites for this service
-    import pdb; pdb.set_trace()
-    sites = ulmo.cuahsi.wof.get_sites(pdata['servURL'])
+def build_jsonld(pdata, sites):
 
     pdata['title'] = f"{pdata['NetworkName']} " \
                      f"- {pdata['organization']}"
 
     # write json-ld
+    # TODO: make sure that @id works when networkname contains spaces
+    encoded_network = urllib.parse.quote(pdata['NetworkName'])
     json_ld = {
                 "@context": [],
-                "@id": f"http://localhost:5000/{network}",
+                "@id": f"http://localhost:5000/{encoded_network}",
                 "@type": []
               }
     elf = {
@@ -89,21 +58,18 @@ def provider(network):
     # build hydrometricNetwork
     # todo: loop
     hyf = hyfeatures.HydrometricNetwork()
-                                        
+
     for k, v in sites.items():
-        """
-        {'code': 'AMES',
- 'location': {'latitude': '42.066667', 'longitude': '-71.1'},
- 'name': '117 CANTON STREET, EASTON, AMES POND',
- 'network': 'TRWA',
- 'site_property': {'state': 'MA'}}
-        """
 
         # todo set description
         lat = v['location']['latitude']
         lon = v['location']['longitude']
+
+        # isolate the url without the query parameters
+        req_url = request.url.split('?')[0]
+
         hyf.add_feature(v['name'],
-                        f'{request.url}/{v["code"]}',
+                        f'{req_url}/{v["code"]}',
                         geo={"@type": "schema:GeoShape",
                              "point": f"{lat} {lon}"},
                         gsp={"@type": "gsp:Geometry",
@@ -116,11 +82,48 @@ def provider(network):
     pdata['jsonld'] = json.dumps(json_ld, sort_keys=False,
                                  indent=4, separators=(',', ': '))
 
-    # return either the page or ld+json
-    arg = request.args.get('jsonld')
-    if arg is None:
-        return render_template("provider.html", data=pdata)
-    else:
-        return Response(response=pdata['jsonld'],
-                        mimetype="application/json")
+    # return ld+json
+    return pdata['jsonld']
 
+
+def build_geojson(sites):
+
+    features = []
+    for k, v in sites.items():
+        feature = {'type': 'Feature'}
+        feature['geometry'] = {'type': 'Point',
+                               'coordinates': [
+                                   float(v['location']['longitude']),
+                                   float(v['location']['latitude'])
+                                   ]
+                               }
+        feature['properties'] = {'SiteName': v['name'],
+                                 'SiteCode': v['code'],
+                                 'Network': v['network']
+                                 }
+        features.append(feature)
+
+
+    geo = {'type': 'FeatureCollection',
+           'features': features}
+    return json.dumps(geo, indent=4)
+
+@routes.route('/<string:network>')
+def provider_index(network):
+
+    pdata = provider.get_provider(network)
+    sites = site.get_sites(pdata)
+    jsonld = build_jsonld(pdata, sites)
+
+    # return either the page or ld+json
+    arg = request.args.get('f')
+    if arg is None or arg == 'html':
+        return render_template("provider.html", data=pdata)
+    elif arg == 'jsonld':
+        # return ld+json
+        return Response(response=jsonld,
+                        mimetype="application/json")
+    elif arg == 'geojson':
+        geojson = build_geojson(sites)
+        return Response(response=geojson,
+                        mimetype="application/json")

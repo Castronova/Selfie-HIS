@@ -7,25 +7,30 @@ from flask import render_template
 from flask import request, Response
 
 from libs import pyhis
+from libs import provider as wof_provider
+from libs import site as wof_site
+
 from contexts import elf
 from . import routes
 
 
 class Site(elf.ElfContext):
-    def __init__(self, wof_site_info_object, wof_data_provider_object):
+    def __init__(self, site, provider):
 
         super(Site, self).__init__()
 
-        s = wof_site_info_object.iloc[0].to_dict()
-        p = wof_data_provider_object.iloc[0].to_dict()
+        self.name = f'{site["name"].strip()} - ' + \
+                    f'{provider["NetworkName"]}'
 
-        self.name = f'{s["sitename"].strip()} - ' + \
-                    f'{p["NetworkName"]}'
-        self.description = f'{s["sitename"]} - ' + \
-                           f'{p["NetworkName"]} - ' + \
-                           f'{s["siteid"]}'
+        # todo: site network is sometimes different than provider network.
+        #       I don't this this is right. I'm using provider network here.
+        self.description = f'{site["name"]} - ' + \
+                           f'{provider["NetworkName"]} - ' + \
+                           f'{site["code"]}'
+        lon = float(site['location']['longitude'])
+        lat = float(site['location']['latitude'])
 
-        self.geometry_from_wkt(f"POINT ({s['lon']} {s['lat']})")
+        self.geometry_from_wkt(f"POINT ({lon} {lat})")
 
 
 def convert(o):
@@ -34,54 +39,52 @@ def convert(o):
     raise TypeError
 
 
+def build_geojson(provider, site):
+
+    geo = {'type': 'Feature',
+           'geometry': {
+               'type': 'Point',
+               'coordinates': [float(site['location']['longitude']),
+                               float(site['location']['latitude'])]
+               }, 'properties': {
+                   'SiteName': site['name'],
+                   'SiteCode': site['code'],
+                   'Network': provider['NetworkName']
+                   }
+           }
+    return json.dumps(geo, indent=4)
+
+
 @routes.route('/<string:network>/<string:siteid>')
-def site(network, siteid):
+def site_index(network, siteid):
 
-    services = pyhis.Services()
-    providers = services.get_data_providers()
+    provider = wof_provider.get_provider(network)
+    site = wof_site.get_site(provider, network, siteid)
+#    jsonld = build_jsonld(pdata, sites)
 
-    # check that the network exists
-    known_networks = providers.NetworkName.values
-    known_networks = [net.upper() for net in known_networks]
 
-    try:
-        idx = known_networks.index(network.upper())
-    except Exception:
-        abort(404)
+    site_context = Site(site, provider)
 
-    # get info for the provider via WOF
-    provider = providers.iloc[idx].to_dict()
+    # loop through the observation series for this site
+    series = []
+    for k, v in site['series'].items():
+        series.append(site['series'][k]['variable'])
 
-    # get WDSL
-    wsdl = provider['servURL']
-
-    # for some reason the uppercase WSDL doesn't work
-    wsdl = wsdl.replace('WSDL', 'wsdl')
-
-    try:
-        # get site info
-        sites = services.get_sites_info([wsdl], [f'{network}:{siteid}'])
-    except Exception:
-        abort(404)
-
-    site_context = Site(sites, providers)
-
-    data = []
-    for i in range(0, len(sites)):
-        data.append(sites.iloc[i].to_dict())
 
     # add global metadata
     dat = {}
-    dat['series'] = data
-    dat['meta'] = {'siteid': data[0]['siteid'],
-                   'sitename': data[0]['sitename'].strip(),
-                   'lat': data[0]['lat'],
-                   'lon': data[0]['lon'],
+    dat['series'] = series
+    lon = float(site['location']['longitude'])
+    lat = float(site['location']['latitude'])
+    dat['meta'] = {'siteid': site['code'],
+                   'sitename': site['name'].strip(),
+                   'lat': lat,
+                   'lon': lon,
                    'provider': provider['NetworkName'],
                    }
 
-    dat['title'] = f"{provider['NetworkName']} {data[0]['sitename'].strip()}" \
-                   f" - {data[0]['siteid']}"
+    dat['title'] = f"{provider['NetworkName']} {site['name'].strip()}" \
+                   f" - {site['code']}"
 
     json_ld = {
                 "@context": site_context.context_url,
@@ -98,12 +101,17 @@ def site(network, siteid):
     dat['jsonld'] = json.dumps(json_ld, sort_keys=True,
                                indent=4, separators=(',', ': '))
 
-    arg = request.args.get('jsonld')
-    if arg is None:
-        return render_template("site.html", data=dat)
-    else:
+    arg = request.args.get('f')
+    if arg is None or arg == 'html':
+        return render_template('site.html', data=dat)
+    elif arg == 'jsonld':
         return Response(dat['jsonld'],
                         mimetype='application/json')
+    elif arg == 'geojson':
+        geojson = build_geojson(provider, site)
+        return Response(geojson,
+                        mimetype='application/json')
+
 
 
 

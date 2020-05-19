@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
-import csv
 import ulmo
 import pyhis
+import urllib
 import argparse
 
 # NOTE THIS REQUIRES SUDS-JURKO, suds-py3 will not work!
@@ -47,10 +47,10 @@ if __name__ == '__main__':
     services = pyhis.Services()
     print('collecting data providers', flush=True)
     providers = services.get_data_providers()
-    print(f'collecting providers that matches {args.p}', flush=True)
+    print(f'finding match for: "{args.p}"', flush=True)
     provider = get_provider(providers, args.p)
     if provider is None:
-        print('invalid provider id')
+        print(f'ERROR: Could not find match for: provider="{args.p}"')
         sys.exit(0)
 
     # get WDSL
@@ -78,20 +78,22 @@ if __name__ == '__main__':
     # TODO: Write namespace
 
     # append to existing namespace if one already exists
+    print('writing geoconnex csv')
     header = 'id,target,creator,description,lat,lon,' + \
-             'c1_type,c1_match,c1_value' + \
-             'c2_type,c2_match,c2_value' + \
-             'c3_type,c3_match,c3_value\n'
-    with open(f'CUAHSI_HIS_{args.p}_ids.csv', 'w') as f:
+             'c1_type,c1_match,c1_value,' + \
+             'c2_type,c2_match,c2_value\n'
+    fname = args.p.replace(' ', '_')
+    with open(f'CUAHSI_HIS_{fname}_ids.csv', 'w') as f:
         f.write(header)
         for siteid, meta in sites.items():
             code = meta['code']
-            net = meta['network']
+            net = urllib.parse.quote(provider.NetworkName)
+            geo_network = provider.NetworkName.replace(' ', '_')
             lat = meta['location']['latitude']
             lon = meta['location']['longitude']
-            des = meta['name']
+            des = meta['name'].replace(',', ' ')
             url = f'http://selfie.cuahsi.org/{net}/{code}'
-            f.write(f'https://geoconnex.us/cuahsi/his/{net}/{code},')
+            f.write(f'https://geoconnex.us/cuahsi/his/{geo_network}/{code},')
             f.write(f'{url},')
             f.write(f'{args.creator},')
             f.write(f'{des},')
