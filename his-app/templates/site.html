@@ -54,7 +54,7 @@
 				Site Name: {{ data['meta']['sitename'] }}
 			    </div>
 			    <div id=provider>
-				Provider Name: {{ data['meta']['provider'] }}
+				Provider Name: <a target='_blank' href={{ data['meta']['provider_url'] }}>{{ data['meta']['provider'] }}</a>
 			    </div>
 			    <div>
 				Latitude: <div id=lat>{{ data['meta']['lat'] }}</div>

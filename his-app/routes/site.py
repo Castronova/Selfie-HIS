@@ -2,6 +2,7 @@
 
 import json
 import numpy
+import urllib
 from flask import abort
 from flask import render_template
 from flask import request, Response
@@ -76,11 +77,13 @@ def site_index(network, siteid):
     dat['series'] = series
     lon = float(site['location']['longitude'])
     lat = float(site['location']['latitude'])
+    purl = f'{request.url_root}{urllib.parse.quote(provider["NetworkName"])}'
     dat['meta'] = {'siteid': site['code'],
                    'sitename': site['name'].strip(),
                    'lat': lat,
                    'lon': lon,
                    'provider': provider['NetworkName'],
+                   'provider_url': purl,
                    }
 
     dat['title'] = f"{provider['NetworkName']} {site['name'].strip()}" \

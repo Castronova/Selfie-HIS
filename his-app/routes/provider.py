@@ -87,7 +87,7 @@ def build_jsonld(pdata, sites):
 
 
 def build_geojson(sites):
-
+    req_url = request.url.split('?')[0]
     features = []
     for k, v in sites.items():
         feature = {'type': 'Feature'}
@@ -99,7 +99,8 @@ def build_geojson(sites):
                                }
         feature['properties'] = {'SiteName': v['name'],
                                  'SiteCode': v['code'],
-                                 'Network': v['network']
+                                 'Network': v['network'],
+                                 'PID': f'<a href={req_url}/{v["code"]}>link</a>',
                                  }
         features.append(feature)
 
