@@ -31,10 +31,14 @@ class HydrometricNetwork():
 
         self.features.append(feature)
 
-    def as_dict(self):
-        d = {"HY_HydrometricNetwork": self.features}
-
-        return d
+    def as_dict(self, geoms=True):
+        if geoms:
+            return {"HY_HydrometricNetwork": self.features}
+        else:
+            keys_to_keep = ['@type', 'name', 'id']
+            res = [{key: item[key] for key in keys_to_keep}
+                   for item in self.features]
+            return {'HY_HydrometricNetwork': res}
 
     def get_context(self):
         return self.context

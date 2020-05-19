@@ -77,7 +77,7 @@ def build_jsonld(pdata, sites):
 
     json_ld.update(elf)
     json_ld['@context'].extend(hyf.get_context())
-    json_ld.update(hyf.as_dict())
+    json_ld.update(hyf.as_dict(geoms=False))
 
     pdata['jsonld'] = json.dumps(json_ld, sort_keys=False,
                                  indent=4, separators=(',', ': '))
