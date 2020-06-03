@@ -81,7 +81,8 @@ if __name__ == '__main__':
     print('writing geoconnex csv')
     header = 'id,target,creator,description,lat,lon,' + \
              'c1_type,c1_match,c1_value,' + \
-             'c2_type,c2_match,c2_value\n'
+             'c2_type,c2_match,c2_value,' + \
+             'c3_type,c3_match,c3_value\n'
     fname = args.p.replace(' ', '_')
     with open(f'CUAHSI_HIS_{fname}_ids.csv', 'w') as f:
         f.write(header)
@@ -101,10 +102,12 @@ if __name__ == '__main__':
             f.write(f'{lon},')
             f.write(f'Extension,')
             f.write(f'^.html$,')
-            f.write(f'{url},')
+            f.write(f'{url}?f=html,')
             f.write(f'Extension,')
+            f.write(f'^.jsonld$,')
+            f.write(f'{url}?f=jsonld,')
             f.write(f'^.json$,')
-            f.write(f'{url}?jsonld\n')
+            f.write(f'{url}?f=geojson\n')
 
 #    try:
 #        # get site info
