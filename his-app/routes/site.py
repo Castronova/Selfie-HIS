@@ -105,15 +105,15 @@ def site_index(network, siteid):
                                indent=4, separators=(',', ': '))
 
     arg = request.args.get('f')
-    if arg is None or arg == 'html':
-        return render_template('site.html', data=dat)
-    elif arg == 'jsonld':
+    if arg == 'jsonld':
         return Response(dat['jsonld'],
                         mimetype='application/json')
     elif arg == 'geojson':
         geojson = build_geojson(provider, site)
         return Response(geojson,
                         mimetype='application/json')
+    else:
+        return render_template('site.html', data=dat)
 
 
 

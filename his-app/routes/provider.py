@@ -118,9 +118,7 @@ def provider_index(network):
 
     # return either the page or ld+json
     arg = request.args.get('f')
-    if arg is None or arg == 'html':
-        return render_template("provider.html", data=pdata)
-    elif arg == 'jsonld':
+    if arg == 'jsonld':
         # return ld+json
         return Response(response=jsonld,
                         mimetype="application/json")
@@ -128,3 +126,5 @@ def provider_index(network):
         geojson = build_geojson(sites)
         return Response(response=geojson,
                         mimetype="application/json")
+    else:
+        return render_template("provider.html", data=pdata)
