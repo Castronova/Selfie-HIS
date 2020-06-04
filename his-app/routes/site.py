@@ -91,7 +91,7 @@ def site_index(network, siteid):
 
     json_ld = {
                 "@context": site_context.context_url,
-                "@id": f"http://localhost:5000/{network}/{siteid}",
+                "@id": f"{request.url_root}{network}/{siteid}",
                 "@type": []
               }
 
