@@ -65,8 +65,8 @@ class HyfContext(object):
 
     @property
     def context_url(self):
-        return ['https://opengeospatial.github.io/ELFIE/json-ld/elf.jsonld']
-
+        return {"hyf": "https://www.opengis.net/def/appschema/hy_features/hyf/"}
+    
     def add_feature(self, feature, id=None, is_realized=True):
         self.__hyfeatures[feature.name] = self.create_feature(feature,
                                                               id,
