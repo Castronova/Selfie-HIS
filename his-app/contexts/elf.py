@@ -28,8 +28,13 @@ class ElfContext(object):
     @property
     def context_url(self):
         """ returns list of context urls """
-        return ['https://opengeospatial.github.io/ELFIE/json-ld/elf.jsonld',
-                {'gsp': 'http://www.opengeospatial.org/standards/geosparql/'}]
+        return {"schema": "http://schema.org/",
+                "name": "schema.name",
+                "description": "schema:description",
+                "geo": "schema:geo",
+		"gsp": "http://www.opengeospatial.org/standards/geosparql/"}
+#        return ['https://opengeospatial.github.io/ELFIE/json-ld/elf.jsonld',
+#                {'gsp': 'http://www.opengeospatial.org/standards/geosparql/'}]
 
     @property
     def context(self):

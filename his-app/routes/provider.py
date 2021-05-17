@@ -35,7 +35,8 @@ def build_jsonld(pdata, sites):
     encoded_network = urllib.parse.quote(pdata['NetworkName'])
     json_ld = {
                 "@context": [],
-                "@id": f"{request.url_root}{encoded_network}",
+                #"@id": f"{request.url_root}{encoded_network}",
+                "@id": f"https://geoconnex.us/cuahsi/his/{encoded_network}",
                 "@type": []
               }
     elf = {
