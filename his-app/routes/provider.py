@@ -110,9 +110,12 @@ def build_geojson(sites):
            'features': features}
     return json.dumps(geo, indent=4)
 
+@routes.route('/test')
+def test_page():
+    return 'hello world'
+
 @routes.route('/<string:network>')
 def provider_index(network):
-
     pdata = provider.get_provider(network)
     sites = site.get_sites(pdata)
     jsonld = build_jsonld(pdata, sites)

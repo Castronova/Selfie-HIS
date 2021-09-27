@@ -2,7 +2,7 @@
 
 import os
 from flask import Flask
-from his_app.routes import *
+from routes import *
 
 # necessary to allow unverified ssl calls
 import ssl
