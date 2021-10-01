@@ -35,7 +35,7 @@ def build_jsonld(pdata, sites):
     encoded_network = urllib.parse.quote(pdata['NetworkName'])
     json_ld = {
                 "@context": [],
-                "@id": f"http://localhost:5000/{encoded_network}",
+                "@id": f"{request.url}/{encoded_network}",
                 "@type": []
               }
     elf = {

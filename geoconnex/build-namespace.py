@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import ulmo
 import pyhis
@@ -29,7 +30,7 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description=desc)
     p.add_argument('-p',
                    required=True,
-                   help='HIS provider ID')
+                   help='HIS provider ID. Use "All" to run for every provider')
     p.add_argument('--creator',
                    default='acastronova@cuahsi.org',
                    help='PID creator email')
@@ -48,85 +49,77 @@ if __name__ == '__main__':
     print('collecting data providers', flush=True)
     providers = services.get_data_providers()
     print(f'finding match for: "{args.p}"', flush=True)
-    provider = get_provider(providers, args.p)
-    if provider is None:
-        print(f'ERROR: Could not find match for: provider="{args.p}"')
-        sys.exit(0)
 
-    # get WDSL
-    wsdl = provider['servURL']
+    provider_ids = []
+    if args.p.lower() == 'all':
+        provider_ids = providers.NetworkName.values
+    else:
+        provider_ids = [args.p]
 
-    # get provider sites
-    print('collecting sites', flush=True)
-    sites = ulmo.cuahsi.wof.get_sites(wsdl)
+    i = 0
+    failed = {}
+    skipped = {}
+    for pid in provider_ids:
+        i += 1
+        print(f'Processing {pid}: [{i} of {len(provider_ids)}]')
+        provider = get_provider(providers, pid)
+        fname = f'CUAHSI_HIS_{pid.replace(" ", "_")}_ids.csv'
 
-#    # for some reason the uppercase WSDL doesn't work
-#    wsdl = wsdl.replace('WSDL', 'wsdl')
-#    network_name = provider['NetworkName']
-#    network_id = str(provider['ServiceID'])
-#
-#    print('getting sites', flush=True)
-#    kwargs = {'conceptKeyword': args.keyword,
-#              }
-#    sites = services.get_sites(float(args.bbox[0]),
-#                               float(args.bbox[1]),
-#                               float(args.bbox[2]),
-#                               float(args.bbox[3]),
-#                               pattern=network_name,
-#                               **kwargs)
+        # skip if file already exists
+        if os.path.exists(fname):
+            msg = 'file already exists'
+            print(f'  - skipping, {msg}')
+            skipped[pid] = msg
+            continue
 
-    # write namespace
+        # skip if provider was not found
+        if provider is None:
+            msg = f'could not find match for: provider="{pid}"'
+            print(f'  - skipping, {msg}')
+            skipped[pid] = msg
+            continue
 
-    # append to existing namespace if one already exists
-    print('writing geoconnex csv')
-    header = 'id,target,creator,description,lat,lon,' + \
-             'c1_type,c1_match,c1_value\n' 
-    fname = args.p.replace(' ', '_')
-    with open(f'CUAHSI_HIS_{fname}_ids.csv', 'w') as f:
-        f.write(header)
-        for siteid, meta in sites.items():
-            code = meta['code']
-            net = urllib.parse.quote(provider.NetworkName)
-            geo_network = provider.NetworkName.replace(' ', '_')
-            lat = meta['location']['latitude']
-            lon = meta['location']['longitude']
-            des = meta['name'].replace(',', ' ')
-            url = f'http://selfie.cuahsi.org/{net}/{code}'
-            f.write(f'https://geoconnex.us/cuahsi/his/{geo_network}/{code},')
-            f.write(f'{url},')
-            f.write(f'{args.creator},')
-            f.write(f'{des},')
-            f.write(f'{lat},')
-            f.write(f'{lon},')
-            f.write(f'QueryString,')
-            f.write(f'f?=.*,')
-            f.write(f'{url}?f=${{C:f:1}}\n')
+        # get WDSL
+        wsdl = provider['servURL']
 
-#    try:
-#        # get site info
-#        sites = services.get_sites_info([wsdl], [f'{network}:{siteid}'])
-#    except Exception:
-#        print('error collecting sites')
-#        sys.exit(1)
-#
-#    # convert pandas df to dict.
-#    # this is necessary because the to_dict function returns 64bit numpy
-#    # data types which are not json serializable :(
-#    pdata = {}
-#    for k, v in provider.to_dict().items():
-#        if type(v) == numpy.int64:
-#            v = int(v)
-#        pdata[k] = v
-#
-##    import pdb; pdb.set_trace()
-#    # get sites for this service
-#    sites = services.get_sites(xmin=pdata['minx'],
-#                               ymin=pdata['miny'],
-#                               xmax=pdata['minx'] + 10,
-#                               ymax=pdata['miny'] + 10,
-# THIS DOESNT SEEM CORRECT      networkIDs=str(pdata['ServiceID']),
-#                               degStep=3)
-#
-#    pdata['title'] = f"{pdata['NetworkName']} " \
-#                     f"- {pdata['organization']}"
-#
+        try:
+            # get provider sites
+            print('  + collecting sites', flush=True)
+            sites = ulmo.cuahsi.wof.get_sites(wsdl)
+
+            # append to existing namespace if one already exists
+            print('  + writing geoconnex csv')
+            header = 'id,target,creator,description,lat,lon,' + \
+                     'c1_type,c1_match,c1_value\n'
+            with open(fname, 'w') as f:
+                f.write(header)
+                for siteid, meta in sites.items():
+                    code = meta['code']
+                    net = urllib.parse.quote(provider.NetworkName)
+                    geo_network = provider.NetworkName.replace(' ', '_')
+                    lat = meta['location']['latitude']
+                    lon = meta['location']['longitude']
+                    des = meta['name'].replace(',', ' ')
+                    url = f'http://selfie.cuahsi.org/{net}/{code}'
+                    f.write(f'https://geoconnex.us/cuahsi/his/{geo_network}/{code},')
+                    f.write(f'{url},')
+                    f.write(f'{args.creator},')
+                    f.write(f'{des},')
+                    f.write(f'{lat},')
+                    f.write(f'{lon},')
+                    f.write(f'QueryString,')
+                    f.write(f'f?=.*,')
+                    f.write(f'{url}?f=${{C:f:1}}\n')
+        except Exception as e:
+            failed[pid] = str(e)
+            continue
+
+    
+    print(f'\nSkipped: {len(skipped.keys())} providers')
+    for k, v in skipped.items():
+        print(f'{k} - {v}') 
+
+    print(f'\nFailed: {len(failed.keys())} providers')
+    for k, v in failed.items():
+        print(f'FAILED: {k} - {v}') 
+

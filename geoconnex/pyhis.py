@@ -54,7 +54,7 @@ class Services(object):
                 - conceptKeyword: concept keyword to search, e.g. surface water
                 - networkIDs: provider IDs to search (list)
         """
-        
+
         keyword = kwargs.get('conceptKeyword', '')
         ids = ','.join(kwargs.get('networkIDs', []))
 
