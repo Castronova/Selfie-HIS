@@ -35,7 +35,8 @@ def build_jsonld(pdata, sites):
     encoded_network = urllib.parse.quote(pdata['NetworkName'])
     json_ld = {
                 "@context": [],
-                "@id": f"{request.url}/{encoded_network}",
+#                "@id": f"{request.url}/{encoded_network}",
+                "@id": f"https://geoconnex.us/cuahsi/his/{encoded_network}",
                 "@type": []
               }
     elf = {
@@ -109,9 +110,12 @@ def build_geojson(sites):
            'features': features}
     return json.dumps(geo, indent=4)
 
+@routes.route('/test')
+def test_page():
+    return 'hello world'
+
 @routes.route('/<string:network>')
 def provider_index(network):
-
     pdata = provider.get_provider(network)
     sites = site.get_sites(pdata)
     jsonld = build_jsonld(pdata, sites)

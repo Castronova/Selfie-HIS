@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve myproject
+After=network.target
+
+[Service]
+User=acastronova
+Group=users
+WorkingDirectory=/home/acastronova/selfie-his
+Environment="PATH=/home/acastronova/anaconda3/envs/selfie/bin"
+ExecStart=/home/acastronova/anaconda3/envs/selfie/bin/gunicorn --workers 3 --bind unix:selfie.sock -m 007 wsgi:application
+
+[Install]
+WantedBy=multi-user.target

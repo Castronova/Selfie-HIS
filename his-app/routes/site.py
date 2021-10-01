@@ -91,16 +91,19 @@ def site_index(network, siteid):
 
     json_ld = {
                 "@context": site_context.context_url,
-                "@id": f"{request.url}/{network}/{siteid}",
+                #"@id": f"{request.url_root}{network}/{siteid}",
+                "@id": f"https://geoconnex.us/cuahsi/his/{network}/{siteid}",
                 "@type": []
               }
 
     json_ld.update(site_context.context)
 
     # define the hy_features
-    json_ld['@context'].append('https://opengeospatial.github.io/ELFIE/json-ld/hyf.jsonld')
-    json_ld['HY_HydroLocationType'] = 'hydrometricStation'
-    json_ld['@type'].append('http://www.opengeospatial.org/standards/waterml2/hy_features/HY_HydroLocation')
+#    json_ld['@context'].append('https://opengeospatial.github.io/ELFIE/json-ld/hyf.jsonld')
+    json_ld['@context']["hyf"] = "https://www.opengis.net/def/appschema/hy_features/hyf/"
+    json_ld['hyf:HY_HydroLocationType'] = 'hyf:hydrometricStation'
+    json_ld['@type'].append('hyf:HY_HydroLocation')
+    json_ld['@type'].append('schema:Place')
     dat['jsonld'] = json.dumps(json_ld, sort_keys=True,
                                indent=4, separators=(',', ': '))
 
