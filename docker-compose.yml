@@ -1,0 +1,19 @@
+
+version: '3.8'
+services:
+
+  selfie:
+    image: cuahsi/selfie:2021.10.08
+    build: 
+      context: ./his-app
+      dockerfile: Dockerfile
+
+  nginx:
+    image: cuahsi/selfie-nginx:2021.10.08
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    depends_on:
+      - selfie
